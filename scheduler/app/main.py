@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from .config import settings
+from .database import engine, Base
+from . import models
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.app_name)
 

@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  scheduler:
+    build: ./scheduler
+    container_name: fairgpu-scheduler
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./scheduler:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    container_name: fairgpu-postgres
+    environment:
+      POSTGRES_USER: fairgpu
+      POSTGRES_PASSWORD: fairgpu
+      POSTGRES_DB: fairgpu
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
