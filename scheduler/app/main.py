@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from scheduler.app.config import settings
+from .config import settings
 
 app = FastAPI(title=settings.app_name)
 
