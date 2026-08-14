@@ -11,3 +11,17 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class NodeCreate(BaseModel):
+    name: str
+    hostname: str
+
+
+class NodeResponse(BaseModel):
+    id: int
+    name: str
+    hostname: str
+    status: str
+
+    class Config:
+        from_attributes = True
