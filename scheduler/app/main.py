@@ -69,3 +69,40 @@ def register_node(node: schemas.NodeCreate, db: Session = Depends(get_db)):
     db.refresh(db_node)
 
     return db_node
+@app.post("/nodes/{node_id}/gpus", response_model=schemas.GPUResponse)
+def register_gpu(
+    node_id: int,
+    gpu: schemas.GPUCreate,
+    db: Session = Depends(get_db)
+):
+    node = db.query(models.Node).filter(
+        models.Node.id == node_id
+    ).first()
+
+    if node is None:
+        raise HTTPException(status_code=404, detail="Node not found")
+
+    existing = db.query(models.GPU).filter(
+        models.GPU.node_id == node_id,
+        models.GPU.gpu_index == gpu.gpu_index
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="GPU already registered on this node"
+        )
+
+    db_gpu = models.GPU(
+        node_id=node_id,
+        gpu_index=gpu.gpu_index,
+        model=gpu.model,
+        memory_gb=gpu.memory_gb,
+        status="free"
+    )
+
+    db.add(db_gpu)
+    db.commit()
+    db.refresh(db_gpu)
+
+    return db_gpu

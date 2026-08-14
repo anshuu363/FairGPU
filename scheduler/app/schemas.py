@@ -25,3 +25,20 @@ class NodeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class GPUCreate(BaseModel):
+    gpu_index: int
+    model: str
+    memory_gb: int
+
+
+class GPUResponse(BaseModel):
+    id: int
+    node_id: int
+    gpu_index: int
+    model: str
+    memory_gb: int
+    status: str
+
+    class Config:
+        from_attributes = True
