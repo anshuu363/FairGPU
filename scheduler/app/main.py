@@ -106,3 +106,31 @@ def register_gpu(
     db.refresh(db_gpu)
 
     return db_gpu
+@app.post("/reserve", response_model=schemas.ReservationResponse)
+def reserve_gpu(
+    request: schemas.ReservationCreate,
+    db: Session = Depends(get_db)
+):
+    free_gpu = db.query(models.GPU).filter(
+        models.GPU.status == "free"
+    ).first()
+
+    if free_gpu is None:
+        raise HTTPException(
+            status_code=409,
+            detail="No GPU available"
+        )
+
+    reservation = models.Reservation(
+        user_name=request.user_name,
+        gpu_id=free_gpu.id,
+        status="running"
+    )
+
+    free_gpu.status = "busy"
+
+    db.add(reservation)
+    db.commit()
+    db.refresh(reservation)
+
+    return reservation

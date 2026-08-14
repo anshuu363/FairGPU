@@ -42,3 +42,16 @@ class GPUResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ReservationCreate(BaseModel):
+    user_name: str
+
+
+class ReservationResponse(BaseModel):
+    id: int
+    user_name: str
+    gpu_id: int
+    status: str
+
+    class Config:
+        from_attributes = True
