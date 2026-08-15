@@ -46,10 +46,20 @@ class Reservation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_name = Column(String, nullable=False)
-    gpu_id = Column(Integer, ForeignKey("gpus.id"))
+
+    # Pending reservations will have gpu_id = NULL
+    gpu_id = Column(Integer, ForeignKey("gpus.id"), nullable=True)
+
     status = Column(String, default="pending")
-    created_at = Column(DateTime(timezone=True),
-                        default=lambda: datetime.now(timezone.utc))
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    started_at = Column(DateTime(timezone=True), nullable=True)
+
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
     gpu = relationship("GPU", back_populates="reservations")
     job = relationship("Job", back_populates="reservation", uselist=False)
