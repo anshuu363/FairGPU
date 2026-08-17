@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-
+from typing import List
+from datetime import timezone,datetime
 class UserCreate(BaseModel):
     name: str
     email: str
@@ -39,7 +40,9 @@ class GPUResponse(BaseModel):
     model: str
     memory_gb: int
     status: str
-
+    utilization_percent: float
+    memory_utilization_percent: float
+    memory_used_gb: float
     class Config:
         from_attributes = True
 
@@ -55,3 +58,20 @@ class ReservationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class GPUHeartbeat(BaseModel):
+    gpu_index: int
+
+    utilization_percent: float
+
+    memory_utilization_percent: float
+
+    memory_used_gb: float
+
+
+class HeartbeatRequest(BaseModel):
+    gpus: List[GPUHeartbeat]
+
+
+
+

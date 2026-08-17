@@ -212,3 +212,77 @@ def cleanup_completed_reservations(
         "deleted_records": deleted,
         "cutoff_date": cutoff.isoformat()
     }
+
+@app.post("/nodes/{node_id}/heartbeat")
+def receive_heartbeat(
+    node_id: int,
+    heartbeat: schemas.HeartbeatRequest,
+    db: Session = Depends(get_db)
+):
+
+    # 1. Find the node
+    node = db.query(models.Node).filter(
+        models.Node.id == node_id
+    ).first()
+
+    if not node:
+        raise HTTPException(
+            status_code=404,
+            detail="Node not found"
+        )
+
+    # 2. Mark node as online
+    node.status = "online"
+
+    # 3. Update the GPUs whose metrics were sent
+    for gpu_data in heartbeat.gpus:
+
+        gpu = db.query(models.GPU).filter(
+            models.GPU.node_id == node_id,
+            models.GPU.gpu_index == gpu_data.gpu_index
+        ).first()
+
+        if gpu:
+            gpu.utilization_percent = gpu_data.utilization_percent
+            gpu.memory_utilization_percent = (
+                gpu_data.memory_utilization_percent
+            )
+            gpu.memory_used_gb = gpu_data.memory_used_gb
+
+    # 4. Store heartbeat
+    heartbeat_record = models.Heartbeat(
+        node_id=node_id
+    )
+
+    db.add(heartbeat_record)
+
+    # 5. Save changes
+    db.commit()
+
+    # 6. IMPORTANT:
+    # Get ALL GPUs belonging to this node
+    all_gpus = db.query(models.GPU).filter(
+        models.GPU.node_id == node_id
+    ).all()
+
+    # 7. Return ALL GPUs
+    return {
+        "message": "Heartbeat received",
+        "node_id": node_id,
+        "status": node.status,
+        "gpus": [
+            {
+                "gpu_id": gpu.id,
+                "gpu_index": gpu.gpu_index,
+                "model": gpu.model,
+                "memory_gb": gpu.memory_gb,
+                "status": gpu.status,
+                "utilization_percent": gpu.utilization_percent,
+                "memory_utilization_percent": (
+                    gpu.memory_utilization_percent
+                ),
+                "memory_used_gb": gpu.memory_used_gb
+            }
+            for gpu in all_gpus
+        ]
+    }
