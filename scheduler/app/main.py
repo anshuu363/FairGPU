@@ -286,3 +286,26 @@ def receive_heartbeat(
             for gpu in all_gpus
         ]
     }
+@app.post("/nodes/register")
+def register_node(
+    node: schemas.NodeCreate,
+    db: Session = Depends(get_db)
+):
+    existing_node = db.query(models.Node).filter(
+        models.Node.hostname == node.hostname
+    ).first()
+
+    if existing_node:
+        return existing_node
+
+    new_node = models.Node(
+        name=node.name,
+        hostname=node.hostname,
+        status="online"
+    )
+
+    db.add(new_node)
+    db.commit()
+    db.refresh(new_node)
+
+    return new_node

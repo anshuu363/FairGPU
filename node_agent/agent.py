@@ -1,16 +1,22 @@
+import os
 import time
 import requests
 
 from gpu_monitor import get_gpu_metrics
 
 
-SCHEDULER_URL = "http://127.0.0.1:8000"
-NODE_ID = 1
+SCHEDULER_URL = os.getenv(
+    "SCHEDULER_URL",
+    "http://127.0.0.1:8000"
+)
 
-HEARTBEAT_INTERVAL = 10
+HEARTBEAT_INTERVAL = int(
+    os.getenv("HEARTBEAT_INTERVAL", "10")
+)
 
 
-def send_heartbeat():
+def send_heartbeat(node_id):
+
     gpu_metrics = get_gpu_metrics()
 
     payload = {
@@ -18,8 +24,9 @@ def send_heartbeat():
     }
 
     response = requests.post(
-        f"{SCHEDULER_URL}/nodes/{NODE_ID}/heartbeat",
-        json=payload
+        f"{SCHEDULER_URL}/nodes/{node_id}/heartbeat",
+        json=payload,
+        timeout=5
     )
 
     response.raise_for_status()
@@ -29,15 +36,47 @@ def send_heartbeat():
 
 
 def main():
+
+    print("Node Agent starting...")
+    print(f"Scheduler: {SCHEDULER_URL}")
+
+    node_id = register_node()
+
+    print(f"Using Node ID: {node_id}")
+
     while True:
+
         try:
-            send_heartbeat()
+            send_heartbeat(node_id)
 
         except Exception as e:
             print(f"Failed to send heartbeat: {e}")
 
         time.sleep(HEARTBEAT_INTERVAL)
+def register_node():
 
+    hostname = os.uname().nodename
+
+    payload = {
+        "name": hostname,
+        "hostname": hostname
+    }
+
+    response = requests.post(
+        f"{SCHEDULER_URL}/nodes/register",
+        json=payload,
+        timeout=5
+    )
+
+    response.raise_for_status()
+
+    node = response.json()
+
+    print("Node registered:")
+    print(node)
+
+    return node["id"]
 
 if __name__ == "__main__":
     main()
+

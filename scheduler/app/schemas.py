@@ -71,7 +71,10 @@ class GPUHeartbeat(BaseModel):
 
 class HeartbeatRequest(BaseModel):
     gpus: List[GPUHeartbeat]
-
+    
+class NodeCreate(BaseModel):
+    name: str
+    hostname: str
 
 
 
