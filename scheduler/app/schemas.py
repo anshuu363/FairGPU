@@ -75,6 +75,10 @@ class HeartbeatRequest(BaseModel):
 class NodeCreate(BaseModel):
     name: str
     hostname: str
-
+    
+class GPUCreate(BaseModel):
+    gpu_index: int
+    model: str
+    memory_gb: int | None = None
 
 

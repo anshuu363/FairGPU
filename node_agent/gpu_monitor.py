@@ -68,3 +68,52 @@ def get_mock_gpu_metrics():
             "memory_used_gb": 2.4
         }
     ]
+
+def get_gpu_info():
+
+    if os.getenv("MOCK_GPU", "false").lower() == "true":
+        return get_mock_gpu_info()
+
+    result = subprocess.run(
+        [
+            "nvidia-smi",
+            "--query-gpu=index,name,memory.total",
+            "--format=csv,noheader,nounits"
+        ],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+
+    gpus = []
+
+    for line in result.stdout.strip().split("\n"):
+
+        values = [
+            value.strip()
+            for value in line.split(",")
+        ]
+
+        gpus.append({
+            "gpu_index": int(values[0]),
+            "model": values[1],
+            "memory_gb": round(float(values[2]) / 1024)
+        })
+
+    return gpus
+
+
+def get_mock_gpu_info():
+
+    return [
+        {
+            "gpu_index": 0,
+            "model": "Mock GPU",
+            "memory_gb": 24
+        },
+        {
+            "gpu_index": 1,
+            "model": "Mock GPU",
+            "memory_gb": 24
+        }
+    ]
