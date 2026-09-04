@@ -4,10 +4,23 @@ from .database import engine, Base,get_db
 from . import models,schemas
 from sqlalchemy.orm import Session
 from datetime import timezone,datetime
+import asyncio
 
+from .failure_detector import monitor_nodes
+from contextlib import asynccontextmanager
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title=settings.app_name)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(monitor_nodes())
+
+    yield
+
+
+app = FastAPI(
+    title="FairGPU Scheduler",
+    lifespan=lifespan
+)
 
 @app.get("/")
 async def root():
@@ -212,12 +225,13 @@ def cleanup_completed_reservations(
         "deleted_records": deleted,
         "cutoff_date": cutoff.isoformat()
     }
-
+from datetime import datetime, timezone
 @app.post("/nodes/{node_id}/heartbeat")
 def receive_heartbeat(
     node_id: int,
     heartbeat: schemas.HeartbeatRequest,
     db: Session = Depends(get_db)
+    
 ):
 
     # 1. Find the node
@@ -233,7 +247,7 @@ def receive_heartbeat(
 
     # 2. Mark node as online
     node.status = "online"
-
+    node.last_heartbeat = datetime.now(timezone.utc)
     # 3. Update the GPUs whose metrics were sent
     for gpu_data in heartbeat.gpus:
 
@@ -255,7 +269,6 @@ def receive_heartbeat(
     )
 
     db.add(heartbeat_record)
-
     # 5. Save changes
     db.commit()
 
@@ -348,3 +361,4 @@ def register_gpu(
     db.refresh(new_gpu)
 
     return new_gpu
+

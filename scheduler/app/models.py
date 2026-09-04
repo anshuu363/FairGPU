@@ -22,7 +22,7 @@ class Node(Base):
     hostname = Column(String, unique=True, nullable=False)
 
     status = Column(String, default="offline")
-
+    last_heartbeat = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc)
